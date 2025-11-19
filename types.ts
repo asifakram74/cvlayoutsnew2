@@ -1,3 +1,4 @@
+
 export interface Experience {
   id: string;
   role: string;
@@ -15,6 +16,22 @@ export interface Education {
   details: string;
 }
 
+export interface CustomItem {
+  id: string;
+  title: string;      // e.g. Project Name, Language Name
+  subtitle: string;   // e.g. Role, Proficiency
+  date: string;       // e.g. 2023
+  description: string;// e.g. Details
+}
+
+export interface CustomSection {
+  id: string;
+  name: string; // The internal type/name
+  title: string; // The display title (editable)
+  items: CustomItem[];
+  isCustom: boolean;
+}
+
 export interface CVData {
   personal: {
     fullName: string;
@@ -29,6 +46,8 @@ export interface CVData {
   experience: Experience[];
   education: Education[];
   skills: string[];
+  customSections: CustomSection[];
+  sectionOrder: string[];
 }
 
 export const INITIAL_CV_DATA: CVData = {
@@ -69,5 +88,7 @@ export const INITIAL_CV_DATA: CVData = {
       dates: "2014 - 2018",
       details: "Graduated with Honors (3.9 GPA). Minor in Graphic Design."
     }
-  ]
+  ],
+  customSections: [],
+  sectionOrder: ['personal', 'summary', 'experience', 'education', 'skills']
 };

@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
-import { CVData, Experience, Education } from '../types';
+import { CVData, Experience, Education, CustomSection, CustomItem } from '../types';
 import { MapPin, Mail, Phone, Globe, Linkedin } from 'lucide-react';
 
 interface PreviewProps {
@@ -16,84 +17,97 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
   const [pages, setPages] = useState<React.ReactNode[][]>([]);
 
   // 1. Break down the CV into atomic "Blocks" that can be moved between pages.
-  // We now break down Experience and Education items into granular headers and lines
-  // to allow them to split across pages.
   const blocks = useMemo(() => {
     const items: React.ReactNode[] = [];
 
-    // Header
-    items.push(<Header key="header" data={data} />);
-
-    // Summary
-    if (data.summary) {
-      items.push(<Summary key="summary" summary={data.summary} />);
-    }
-
-    // Skills
-    if (data.skills.length > 0) {
-      items.push(<Skills key="skills" skills={data.skills} />);
-    }
-
-    // Experience
-    if (data.experience.length > 0) {
-      items.push(<SectionTitle key="exp-title" title="Work Experience" />);
-      
-      data.experience.forEach((exp, index) => {
-        const isLast = index === data.experience.length - 1;
-        
-        // Header info (Role, Company, Dates)
-        items.push(<ExperienceHeader key={`exp-header-${exp.id}`} exp={exp} />);
-        
-        // Description split by newlines (Bullet points)
-        if (exp.description) {
-          const lines = exp.description.split('\n');
-          lines.forEach((line, lineIdx) => {
-            if (line.trim()) {
-              items.push(
-                <ExperienceDescriptionLine 
-                  key={`exp-desc-${exp.id}-${lineIdx}`} 
-                  text={line} 
-                />
-              );
+    // Generator Functions
+    const generators: Record<string, () => void> = {
+      personal: () => {
+        items.push(<Header key="header" data={data} />);
+      },
+      summary: () => {
+        if (data.summary) {
+          items.push(<Summary key="summary" summary={data.summary} />);
+        }
+      },
+      skills: () => {
+        if (data.skills.length > 0) {
+          items.push(<Skills key="skills" skills={data.skills} />);
+        }
+      },
+      experience: () => {
+        if (data.experience.length > 0) {
+          items.push(<SectionTitle key="exp-title" title="Work Experience" />);
+          
+          data.experience.forEach((exp, index) => {
+            const isLast = index === data.experience.length - 1;
+            items.push(<ExperienceHeader key={`exp-header-${exp.id}`} exp={exp} />);
+            if (exp.description) {
+              const lines = exp.description.split('\n');
+              lines.forEach((line, lineIdx) => {
+                if (line.trim()) {
+                  items.push(<ExperienceDescriptionLine key={`exp-desc-${exp.id}-${lineIdx}`} text={line} />);
+                }
+              });
             }
+            if (!isLast) items.push(<div key={`exp-spacer-${exp.id}`} className="h-5" />);
           });
         }
-        
-        // Add spacer between items (replaces the old mb-5 on the container)
-        if (!isLast) {
-           items.push(<div key={`exp-spacer-${exp.id}`} className="h-5" />);
-        }
-      });
-    }
-
-    // Education
-    if (data.education.length > 0) {
-      items.push(<SectionTitle key="edu-title" title="Education" />);
-      
-      data.education.forEach((edu, index) => {
-        const isLast = index === data.education.length - 1;
-        
-        items.push(<EducationHeader key={`edu-header-${edu.id}`} edu={edu} />);
-        
-        if (edu.details) {
-           const lines = edu.details.split('\n');
-           lines.forEach((line, lineIdx) => {
-            if (line.trim()) {
-               items.push(
-                 <EducationDetailsLine 
-                   key={`edu-desc-${edu.id}-${lineIdx}`} 
-                   text={line} 
-                 />
-               );
+      },
+      education: () => {
+        if (data.education.length > 0) {
+          items.push(<SectionTitle key="edu-title" title="Education" />);
+          data.education.forEach((edu, index) => {
+            const isLast = index === data.education.length - 1;
+            items.push(<EducationHeader key={`edu-header-${edu.id}`} edu={edu} />);
+            if (edu.details) {
+               const lines = edu.details.split('\n');
+               lines.forEach((line, lineIdx) => {
+                if (line.trim()) {
+                   items.push(<EducationDetailsLine key={`edu-desc-${edu.id}-${lineIdx}`} text={line} />);
+                }
+              });
             }
+            if (!isLast) items.push(<div key={`edu-spacer-${edu.id}`} className="h-4" />);
           });
         }
-        
-        if (!isLast) {
-           items.push(<div key={`edu-spacer-${edu.id}`} className="h-4" />);
+      }
+    };
+
+    const generateCustomSection = (section: CustomSection) => {
+        if (section.items.length > 0) {
+            items.push(<SectionTitle key={`custom-title-${section.id}`} title={section.title} />);
+            
+            section.items.forEach((item, index) => {
+                const isLast = index === section.items.length - 1;
+                
+                items.push(
+                    <CustomItemBlock 
+                        key={`custom-item-${section.id}-${item.id}`} 
+                        item={item} 
+                        type={section.name}
+                    />
+                );
+
+                if (!isLast) items.push(<div key={`custom-spacer-${section.id}-${item.id}`} className="h-3" />);
+            });
         }
-      });
-    }
+    };
+
+    // Execute generators in the user-defined order
+    const order = data.sectionOrder || ['personal', 'summary', 'experience', 'education', 'skills'];
+    
+    order.forEach(id => {
+      if (generators[id]) {
+        generators[id]();
+      } else {
+        // Check if it is a custom section
+        const customSection = data.customSections.find(s => s.id === id);
+        if (customSection) {
+            generateCustomSection(customSection);
+        }
+      }
+    });
 
     return items;
   }, [data]);
@@ -106,7 +120,6 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
     let currentPage: React.ReactNode[] = [];
     let currentHeight = 0;
 
-    // Helper to start a new page
     const pushPage = () => {
       if (currentPage.length > 0) {
         newPages.push(currentPage);
@@ -118,14 +131,11 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
     const elements = Array.from(containerRef.current.children) as HTMLElement[];
 
     elements.forEach((el, index) => {
-      // We must check computed styles to include margins in the height calculation
       const style = window.getComputedStyle(el);
       const marginTop = parseFloat(style.marginTop) || 0;
       const marginBottom = parseFloat(style.marginBottom) || 0;
-      
       const elementHeight = el.offsetHeight + marginTop + marginBottom;
 
-      // If adding this element exceeds the page height...
       if (currentHeight + elementHeight > CONTENT_HEIGHT_PX) {
         pushPage();
       }
@@ -134,7 +144,6 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
       currentHeight += elementHeight;
     });
 
-    // Push the final page
     if (currentPage.length > 0) {
       newPages.push(currentPage);
     }
@@ -145,25 +154,22 @@ const Preview: React.FC<PreviewProps> = ({ data }) => {
   return (
     <div className="flex flex-col items-center gap-8 pb-20 print:block print:gap-0 print:pb-0">
       
-      {/* Hidden Measurement Container: Must exactly match Page styles for accurate measurement */}
+      {/* Hidden Measurement Container */}
       <div 
         ref={containerRef} 
         className="fixed top-0 left-0 w-[210mm] p-12 opacity-0 pointer-events-none z-[-999]"
-        style={{ visibility: 'hidden' }} // Ensure it doesn't flicker
+        style={{ visibility: 'hidden' }} 
       >
         {blocks}
       </div>
 
       {/* Render Pages */}
       {pages.length === 0 ? (
-        // Fallback/Loading state (renders empty page briefly)
         <div className="a4-page shadow-2xl p-12 bg-white"></div>
       ) : (
         pages.map((pageContent, i) => (
           <div key={i} className="a4-page shadow-2xl p-12 bg-white text-slate-900 relative print:shadow-none">
              {pageContent}
-             
-             {/* Optional Page Number */}
              {pages.length > 1 && (
                <div className="absolute bottom-4 right-12 text-[10px] text-slate-400 print:hidden">
                  Page {i + 1} of {pages.length}
@@ -282,5 +288,38 @@ const EducationDetailsLine: React.FC<{ text: string }> = ({ text }) => (
      {text}
   </div>
 );
+
+// Custom Item Block
+const CustomItemBlock: React.FC<{ item: CustomItem; type: string }> = ({ item, type }) => {
+    // Layout variation for simple lists (like Languages/Interests)
+    const isSimpleList = ['languages', 'interests', 'skills'].includes(type);
+
+    if (isSimpleList) {
+        return (
+             <div className="flex justify-between items-center mb-1">
+                <span className="font-bold text-slate-800 text-sm">{item.title}</span>
+                <span className="text-sm text-slate-600 italic">{item.subtitle}</span>
+            </div>
+        )
+    }
+
+    // Default Layout (similar to experience)
+    return (
+        <div className="mb-2">
+            <div className="flex justify-between items-baseline mb-0.5">
+                <h3 className="font-bold text-slate-800 text-sm">{item.title}</h3>
+                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">{item.date}</span>
+            </div>
+            {item.subtitle && (
+                <div className="text-sm text-slate-600 font-medium mb-1">{item.subtitle}</div>
+            )}
+            {item.description && (
+                <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                    {item.description}
+                </div>
+            )}
+        </div>
+    )
+}
 
 export default Preview;
