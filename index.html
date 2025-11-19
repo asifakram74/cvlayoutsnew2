@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ResuMate AI - Smart CV Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                850: '#1e293b', // Custom dark slate
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Merriweather', 'serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+      /* A4 Paper Styling */
+      .a4-page {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto;
+        background: white;
+        overflow: hidden;
+        position: relative;
+        box-sizing: border-box;
+      }
+
+      @media print {
+        @page {
+          margin: 0;
+          size: auto;
+        }
+
+        html, body {
+          height: auto !important;
+          overflow: visible !important;
+          background: white;
+        }
+
+        #root {
+          height: auto !important;
+          overflow: visible !important;
+        }
+
+        .no-print {
+          display: none !important;
+        }
+
+        .print-full {
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-shadow: none !important;
+          overflow: visible !important;
+        }
+        
+        /* Ensure pages break correctly when printing */
+        .a4-page {
+          margin: 0 !important;
+          box-shadow: none !important;
+          page-break-after: always;
+          height: auto !important;
+          min-height: 297mm !important;
+          border: none !important;
+        }
+        
+        .a4-page:last-child {
+          page-break-after: auto;
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "html2canvas": "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm",
+    "jspdf": "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-100 text-slate-900 font-sans h-screen overflow-hidden print:h-auto print:overflow-visible">
+    <div id="root" class="h-full print:h-auto print:overflow-visible"></div>
+  </body>
+</html>
