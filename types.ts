@@ -48,6 +48,7 @@ export interface CVData {
   skills: string[];
   customSections: CustomSection[];
   sectionOrder: string[];
+  template: string; // 'standard' | 'modern' | 'executive' | 'minimal'
 }
 
 export const INITIAL_CV_DATA: CVData = {
@@ -90,5 +91,6 @@ export const INITIAL_CV_DATA: CVData = {
     }
   ],
   customSections: [],
-  sectionOrder: ['personal', 'summary', 'experience', 'education', 'skills']
+  sectionOrder: ['personal', 'summary', 'experience', 'education', 'skills'],
+  template: 'standard'
 };

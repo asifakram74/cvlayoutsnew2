@@ -4,12 +4,14 @@ import { CVData, Experience, Education, CustomSection, CustomItem } from '../typ
 import { generateSummary, improveDescription } from '../services/geminiService';
 import { 
   Plus, Trash2, Sparkles, ChevronDown, ChevronUp, Copy, GripVertical, LayoutList, X, 
-  Briefcase, GraduationCap, Globe, Award, Folder, FileText, Heart, Users, BookOpen, PenTool, Puzzle
+  Briefcase, GraduationCap, Globe, Award, Folder, FileText, Heart, Users, BookOpen, PenTool, Puzzle,
+  LayoutTemplate
 } from 'lucide-react';
 
 interface EditorProps {
   data: CVData;
   onChange: (data: CVData) => void;
+  onOpenTemplateSelector?: () => void;
 }
 
 const sectionIcons: Record<string, React.ElementType> = {
@@ -39,7 +41,7 @@ const sectionTitles: Record<string, string> = {
   skills: 'Skills'
 };
 
-const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
+const Editor: React.FC<EditorProps> = ({ data, onChange, onOpenTemplateSelector }) => {
   const [activeSection, setActiveSection] = useState<string | null>('personal');
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [isReordering, setIsReordering] = useState(false);
@@ -62,6 +64,16 @@ const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
     const summary = await generateSummary(data.personal.jobTitle, data.skills);
     updateSummary(summary);
     setLoading(prev => ({ ...prev, summary: false }));
+  };
+
+  const handleOpenTemplateSelector = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onOpenTemplateSelector && typeof onOpenTemplateSelector === 'function') {
+        onOpenTemplateSelector();
+    } else {
+        console.warn("onOpenTemplateSelector prop is missing");
+    }
   };
 
   // Skills
@@ -484,7 +496,6 @@ const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
 
   const currentOrder = data.sectionOrder || ['personal', 'summary', 'experience', 'education', 'skills'];
   
-  // Map to look up display titles for reorder list
   const getSectionTitle = (id: string) => {
       if (sectionTitles[id]) return sectionTitles[id];
       const custom = data.customSections.find(s => s.id === id);
@@ -493,6 +504,39 @@ const Editor: React.FC<EditorProps> = ({ data, onChange }) => {
 
   return (
     <div className="space-y-4 pb-24">
+      
+      {/* Template Selection Banner */}
+      <div className="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
+        <div className="p-5 relative z-10">
+            <h3 className="font-bold text-lg text-slate-900 mb-1">Apply a design template</h3>
+            <p className="text-slate-500 text-xs mb-4">Update your entire resume design with one click.</p>
+            
+            <div className="relative h-32 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden mb-0 flex items-center justify-center">
+                {/* Mock Background Templates */}
+                <div className="absolute inset-0 flex gap-2 opacity-30 grayscale p-2 overflow-hidden pointer-events-none">
+                    {[1,2,3,4].map(i => (
+                         <div key={i} className="w-24 h-32 bg-white border border-gray-200 shadow-sm shrink-0 rounded-sm flex flex-col gap-1 p-1">
+                             <div className="h-2 w-full bg-gray-200 rounded-sm"></div>
+                             <div className="h-1 w-2/3 bg-gray-200 rounded-sm"></div>
+                             <div className="h-1 w-full bg-gray-100 mt-1"></div>
+                             <div className="h-1 w-full bg-gray-100"></div>
+                             <div className="h-1 w-full bg-gray-100"></div>
+                         </div>
+                    ))}
+                </div>
+
+                <button 
+                    type="button"
+                    onClick={handleOpenTemplateSelector}
+                    className="relative z-20 bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-50 px-6 py-2.5 rounded-full font-bold text-sm shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
+                >
+                    <LayoutTemplate size={16} />
+                    Browse Templates
+                </button>
+            </div>
+        </div>
+      </div>
+
       <div className="flex justify-end mb-2">
         <button
           onClick={() => setIsReordering(true)}
@@ -540,13 +584,10 @@ interface AddSectionModalProps {
 
 const AddSectionModal: React.FC<AddSectionModalProps> = ({ onClose, onAdd, existingSections }) => {
     const sections = [
-        // Standard sections that might be hidden
         { id: 'experience', icon: Briefcase, label: 'Experience', desc: 'Job history', isStandard: true },
         { id: 'education', icon: GraduationCap, label: 'Education', desc: 'Schools & degrees', isStandard: true },
         { id: 'skills', icon: PenTool, label: 'Skills', desc: 'Technical proficiency', isStandard: true },
         { id: 'summary', icon: FileText, label: 'Summary', desc: 'Professional profile', isStandard: true },
-        
-        // Custom sections
         { id: 'languages', icon: Globe, label: 'Languages', desc: 'Languages you speak' },
         { id: 'certificates', icon: Award, label: 'Certificates', desc: 'Licenses & certs' },
         { id: 'interests', icon: Heart, label: 'Interests', desc: 'Hobbies & activities' },
@@ -692,7 +733,6 @@ const ReorderModal: React.FC<ReorderModalProps> = ({ order, getLabel, onClose, o
   );
 };
 
-// Helper Components for Editor
 interface SectionProps {
     title: string;
     isOpen: boolean;

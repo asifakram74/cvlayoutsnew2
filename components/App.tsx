@@ -133,6 +133,7 @@ const App: React.FC = () => {
                 type="button"
                 onClick={(e) => {
                     e.preventDefault();
+                    console.log("Design button clicked");
                     setTemplateOpen(true);
                 }}
                 className="flex-1 sm:flex-none justify-center text-sm border border-gray-300 text-slate-700 font-medium hover:bg-gray-50 px-3 py-2 rounded-lg transition-all flex items-center gap-2"
@@ -162,7 +163,10 @@ const App: React.FC = () => {
           <Editor 
             data={cvData} 
             onChange={setCvData} 
-            onOpenTemplateSelector={() => setTemplateOpen(true)}
+            onOpenTemplateSelector={() => {
+                console.log("Opening template selector from editor");
+                setTemplateOpen(true);
+            }}
           />
         </div>
       </div>
